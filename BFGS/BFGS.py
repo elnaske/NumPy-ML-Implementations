@@ -77,8 +77,8 @@ class BFGSDenoiser():
         X = self.get_x(X)
         y = y.flatten()
 
-        # Initialize G as an identity matrix
-        self.G = np.eye(len(self.f))
+        # Initialize B as an identity matrix
+        self.B = np.eye(len(self.f))
 
         for epoch in range(epochs):
             # Apply the filter to the input
@@ -91,21 +91,21 @@ class BFGSDenoiser():
             f_grad = self.get_gradient(self.f, X, y)
 
             # Calculate the search direction
-            direction = -self.G @ f_grad
+            direction = -self.B @ f_grad
 
             # Calculate the new f and its derivative
             f_1 = self.f + lr * direction
             f_1_grad = self.get_gradient(f_1, X, y)
 
-            p = f_1 - self.f
+            s = f_1 - self.f
             v = f_1_grad - f_grad
 
-            u = p / (p.T @ v) - (self.G @ v) / (v.T @ self.G @ v)
+            u = s / (s.T @ v) - (self.B @ v) / (v.T @ self.B @ v)
 
-            pTv = p.T @ v
-            if pTv > 1e-10: # To avoid division by zero
-                Gv = self.G @ v
-                self.G = self.G + np.outer(p, p) / pTv - np.outer(Gv, Gv) / (v.T @ Gv) + (v.T @ Gv) * np.outer(u, u)
+            sTv = s.T @ v
+            if sTv > 1e-10: # To avoid division by zero
+                Bv = self.B @ v
+                self.B = self.B + np.outer(s, s) / sTv - np.outer(Bv, Bv) / (v.T @ Bv) + (v.T @ Bv) * np.outer(u, u)
 
             # Update filter
             self.f = f_1

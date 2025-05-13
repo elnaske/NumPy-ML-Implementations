@@ -6,10 +6,10 @@ class SGDDenoiser():
         Randomly initialized the denoising filter.
 
         args:
-            nrows: Number of rows for the filter.
-            ncols: Number of columns for the filter.
+            nrows: Height of the filter.
+            ncols: Width of the filter.
         """
-        self.f = (np.random.rand(nrows * ncols) - 0.5) * 0.001
+        self.f = np.random.rand(nrows * ncols) * 0.1
 
         self.nrows = nrows
         self.ncols = ncols
@@ -30,7 +30,7 @@ class SGDDenoiser():
                 patches.append(patch.flatten())
         X = np.stack(patches, axis = 1)
         return X
-    
+
     def pad_input(self, inp):
         """
         Pads the input image on all sides to maintain the original size in the output ("same" padding).
@@ -68,9 +68,10 @@ class SGDDenoiser():
         y_pred = self.apply_filter(X)
 
         return - (2/N) * X @ ((y - y_pred) * (y_pred * (1 - y_pred)))
-    
+
     def sigmoid(self, x):
-        return 1 / (1 + np.exp((-1)*(np.float128(x))))
+        # return 1 / (1 + np.exp((-1)*(np.float128(x))))
+        return 1 / (1 + np.exp((-1)*x))
 
     def fit(self, X, y, epochs = 10, lr = 0.1, verbose = False):
         # Get the patches
@@ -90,7 +91,7 @@ class SGDDenoiser():
             self.f -= lr * gradient
 
             if verbose:
-                if (epoch + 1) % 10 == 0:
+                if (epoch + 1) % 100 == 0:
                     print(f"Epoch {epoch + 1} | Error (* 1e6): {error * 100000:.2f}")
 
     def predict(self, X):
@@ -108,7 +109,7 @@ class SGDDenoiser():
         y_pred = y_pred.reshape(height, width)
 
         return y_pred
-    
+
     def get_filter(self):
         """
         Reshapes the flattened filter into a 2D array for the purposes of visualization.

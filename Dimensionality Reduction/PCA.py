@@ -56,3 +56,35 @@ class PCA():
     def fit_transform(self, X):
         self.fit(X)
         return self.transform(X)
+
+
+class KernelPCA(PCA):
+    def __init__(self, n_comp, sigma=1.0):
+        self.n_comp = n_comp
+        self.sigma = sigma
+        self.components = None
+        self.mean = None
+
+    def rbf_kernel(self, X, Y=None):
+        if Y is None:
+            Y = X
+        # Compute square euclidean distances
+        diffs = Y[:,np.newaxis,:] - X[np.newaxis,:,:]
+        sq_dists = np.sum(diffs**2, axis=-1)
+
+        return np.exp(-sq_dists / self.sigma**2)
+    
+    def fit(self, X):
+        self.X_fit = X
+
+        # Get the RBF kernel
+        K = self.rbf_kernel(X)
+
+        # Get top k eigenvectors
+        _, eigvecs = self.eigendecomposition(K, self.n_comp)
+
+        self.components = eigvecs
+
+    def transform(self, X):
+        K = self.rbf_kernel(X, self.X_fit)
+        return K.T @ self.components

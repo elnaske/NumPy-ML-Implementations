@@ -9,10 +9,14 @@ class AdaPerceptron(Perceptron):
         self.w_m = w_m
 
         self.error_prog = []
+    
+    def predict(self, X):
+        z = self.W @ X.T + self.b
+        return self.activation(z)
 
-    def backprop(self, x, y, y_pred):
+    def backprop(self, X, y, y_pred):
         dL = -2 * self.w_m * (y - y_pred) * self.grad_activation(y_pred)
-        dW = x @ dL
+        dW = X.T @ dL
         db = np.sum(dL)
         return dW, db
 
@@ -25,14 +29,17 @@ class AdaPerceptron(Perceptron):
 
     def error(self, y, y_pred):
         return self.w_m @ (y - y_pred) ** 2
-    
+
 class AdaBoost():
-    def __init__(self, X, y):
+    def __init__(self, X, y, random_state=None):
+        if random_state is not None:
+            np.random.seed(random_state)
+
         self.X = X
         self.y = y
 
-        self.T = X.shape[1] # Number of samples
-        self.F = X.shape[0] # Number of features
+        self.T = X.shape[0] # Number of samples
+        self.F = X.shape[1] # Number of features
 
         # Initialize sample weights
         self.w_0 = np.random.rand(self.T) * 1e-6
@@ -68,18 +75,18 @@ class AdaBoost():
     def predict(self, X):
         W = self.phi[:, :2]
         b = self.phi[:, 2]
-        b = np.repeat(np.expand_dims(b, axis=1), X.shape[1], axis=1)
-        z = W @ X + b
+        b = np.repeat(np.expand_dims(b, axis=1), X.shape[0], axis=1)
+        z = W @ X.T + b
         phi_x = np.sign(self.tanh(z))
         return np.sign(self.beta @ phi_x)
 
     def compute_phi(self, epochs, lr, w_m):
-        # train a weak learner
+        # Train a weak learner
         phi = AdaPerceptron(self.F, w_m)
         phi.fit(self.X, self.y, epochs, lr)
         # phi.plot_error()
 
-        # return weights and bias and predictions (sign)
+        # Return weights and bias and predictions (sign)
         weights = np.concatenate((phi.W, np.array([phi.b])))
         preds = np.sign(phi.predict(self.X))
 

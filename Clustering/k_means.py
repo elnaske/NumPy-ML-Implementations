@@ -1,19 +1,29 @@
 import numpy as np
 
 class KMeans():
-    def __init__(self, X, k):
-        self.X = X
+    def __init__(self, k):
         self.k = k
-        self.centroids = X[np.random.choice(X.shape[0], k, replace=False)]
 
-    def predict(self):
-        distances = abs(self.X[:,np.newaxis] - self.centroids)
-        return np.argmin(distances, axis = 1)
+    def predict(self, X):
+        if len(X.shape) == 1:
+            X = np.expand_dims(X, 1)
 
-    def update_centroids(self, predictions):
-        return np.array([np.mean(self.X[predictions == i]) for i in range(self.k)])
+        distances = self._distance(X, self.centroids)
+        return np.argmin(distances, axis = -1)
 
-    def fit(self, epochs):
+    def update_centroids(self, X, predictions):
+        return np.array([np.mean(X[predictions == i], axis = 0) for i in range(self.k)])
+
+    def fit(self, X, epochs):
+        if len(X.shape) == 1:
+            X = np.expand_dims(X, 1)
+
+        self.centroids = X[np.random.choice(X.shape[0], self.k, replace=False)]
+
         for _ in range(epochs):
-            predictions = self.predict()
-            self.centroids = self.update_centroids(predictions)
+            predictions = self.predict(X)
+            self.centroids = self.update_centroids(X, predictions)
+    
+    def _distance(self, a, b):
+        # Euclidean distance
+        return np.sqrt(np.sum((a[:, np.newaxis] - b) ** 2, axis=-1))
